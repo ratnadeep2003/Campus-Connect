@@ -10,6 +10,7 @@ function Home() {
     const navigate = useNavigate();
     const [studentForm, setStudentForm] = useState({ name: '', surname: '', email: '', mobile: '' });
     const [courseForm, setCourseForm] = useState({ title: '', description: '', duration: '', fees: '' });
+    const [assignedCourses, setAssignedCourses] = useState([]);
 
     const [assignCourse, setAssignCourse] = useState({
         studentId: "",
@@ -60,6 +61,19 @@ function Home() {
         console.log(assignCourse);
 
     }
+
+    const assignStudentCourse = () => {
+    fetch('http://localhost:8080/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(assignCourse)
+    })
+    .then(res => res.json())
+    .then(data => {
+        setAssignCourse({ studentId: "", courseId: "" });
+        window.bootstrap.Modal.getInstance(document.getElementById('assignCourse')).hide();
+    });
+};
 
     return (
         <div>
@@ -116,7 +130,14 @@ function Home() {
                     <div className="mt-auto d-flex gap-2 p-3 justify-content-center">
                         <button onClick={() => setView('students')} type="button" className="btn btn-primary">Student</button>
                         <button onClick={() => setView('courses')} type="button" className="btn btn-primary">Course</button>
-                        <button className="btn btn-primary">Assign Course</button>
+                        <button onClick={() => {
+    fetch('http://localhost:8080/course-assign')
+        .then(res => res.json())
+        .then(data => {
+            setAssignedCourses(data.data);
+            setView('assigned');
+        });
+}} className="btn btn-primary">Show Assigned Courses</button>
                     </div>
                 </div>
                 <div className="col-lg-9 text-center" style={{ marginLeft: '25%', marginTop: '58px' }}>
@@ -176,6 +197,27 @@ function Home() {
                             </table>
                         )
                     }
+                    {view === 'assigned' && (
+    <table className="table">
+        <thead>
+            <tr>
+                <th>Sr no.</th>
+                <th>Student Name</th>
+                <th>Course Title</th>
+            </tr>
+        </thead>
+        <tbody>
+            {assignedCourses.map((record, i) => (
+                <tr key={record._id}>
+                    <td>{i + 1}</td>
+                    <td>{record.studentId?.name} {record.studentId?.surname}</td>
+                    <td>{record.courseId?.title}</td>
+                </tr>
+            ))}
+        </tbody>
+    </table>
+)}
+
                 </div>
             </div>
 
@@ -277,21 +319,23 @@ function Home() {
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            <select onChange={handleCourseAssign} name="" id="studentId" className='form-control'>
-                                <option value="">Select Option</option>
-                                {
-                                    students.map((student) => {
+    <select onChange={handleCourseAssign} id="studentId" className='form-control mb-3'>
+        <option value="">Select Student</option>
+        {students.map((student) => (
+            <option key={student._id} value={student._id}>{student.name}</option>
+        ))}
+    </select>
 
-                                        return (
-                                            <option value={student._id}>{student.name}</option>
-                                        )
-                                    })
-                                }
-                            </select>
-                        </div>
+    <select onChange={handleCourseAssign} id="courseId" className='form-control'>
+        <option value="">Select Course</option>
+        {courses.map((course) => (
+            <option key={course._id} value={course._id}>{course.title}</option>
+        ))}
+    </select>
+</div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="button" class="btn btn-primary">Save changes</button>
+                            <button type="button" class="btn btn-primary" onClick={assignStudentCourse}>Save changes</button>
                         </div>
                     </div>
                 </div>
